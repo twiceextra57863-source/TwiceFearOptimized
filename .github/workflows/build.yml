@@ -40,24 +40,34 @@ jobs:
           echo "=== build/libs ==="
           ls -lah build/libs || true
 
-      - name: Upload playable JARs (non-source)
-        uses: actions/upload-artifact@v4
-        with:
-          name: lagfree-jars-${{ github.run_number }}
-          path: |
-            build/libs/*.jar
-            !build/libs/*-sources.jar
-            !build/libs/*-javadoc.jar
-          if-no-files-found: error
-          retention-days: 14
+      - name: Prepare artifact bundle
+        if: always()
+        run: |
+          mkdir -p ci-artifacts
+          shopt -s nullglob
+          runtime_found=0
+          for f in build/libs/*.jar; do
+            if [[ "$f" == *-sources.jar || "$f" == *-javadoc.jar ]]; then
+              continue
+            fi
+            cp "$f" ci-artifacts/
+            runtime_found=1
+          done
 
-      - name: Upload sources JAR
+          if [[ $runtime_found -eq 0 ]]; then
+            echo "No runtime JAR found; attaching sources or diagnostics fallback." > ci-artifacts/README.txt
+            for f in build/libs/*-sources.jar; do
+              cp "$f" ci-artifacts/
+            done
+          fi
+
+      - name: Upload mod artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lagfree-sources-${{ github.run_number }}
-          path: build/libs/*-sources.jar
-          if-no-files-found: warn
+          name: lagfree-artifacts-${{ github.run_number }}
+          path: ci-artifacts/**
+          if-no-files-found: error
           retention-days: 14
 
       - name: Upload build diagnostics
