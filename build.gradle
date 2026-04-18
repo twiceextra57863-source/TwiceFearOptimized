@@ -21,8 +21,6 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation platform('org.lwjgl:lwjgl-bom:3.3.3')
-    implementation 'org.lwjgl:lwjgl-vulkan'
 }
 
 tasks.withType(JavaCompile).configureEach {
