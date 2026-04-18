@@ -27,8 +27,14 @@ public final class AsyncChunkBuildQueue implements AutoCloseable {
         for (int i = 0; i < workerCount; i++) {
             workers.submit(() -> {
                 while (!Thread.currentThread().isInterrupted()) {
-                    Runnable job = queue.take();
-                    job.run();
+                    try {
+                        Runnable job = queue.take();
+                        job.run();
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                    } catch (Throwable t) {
+                        // Keep worker alive even if one chunk task crashes.
+                    }
                 }
                 return null;
             });
