@@ -26,10 +26,10 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build mod jars (with retry)
+      - name: Build remapped mod jar (with retry)
         run: |
           for i in 1 2 3; do
-            gradle --stacktrace --no-daemon clean build && break
+            gradle --stacktrace --no-daemon clean remapJar sourcesJar && break
             echo "Gradle build attempt $i failed, retrying in 20s..."
             sleep 20
           done
@@ -39,15 +39,24 @@ jobs:
         run: |
           echo "=== build/libs ==="
           ls -lah build/libs || true
-          echo "=== build/reports ==="
-          ls -lah build/reports || true
 
-      - name: Upload runtime JARs
-        if: always()
+      - name: Upload playable JARs (non-source)
         uses: actions/upload-artifact@v4
         with:
           name: lagfree-jars-${{ github.run_number }}
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            !build/libs/*-sources.jar
+            !build/libs/*-javadoc.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload sources JAR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lagfree-sources-${{ github.run_number }}
+          path: build/libs/*-sources.jar
           if-no-files-found: warn
           retention-days: 14
 
